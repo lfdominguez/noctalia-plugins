@@ -84,6 +84,15 @@ local function render()
   local function divider()
     children[#children + 1] = ui.box({ width = vertical and 10 or 1, height = vertical and 1 or 10, fill = "outline/0.6" })
   end
+  -- With several accounts, each account's group starts with a small name tag so its dots and
+  -- limits can be told apart (shorten long names with the account_labels setting).
+  local function accountTag(account)
+    if not multi then return end
+    if #children > 1 then divider() end
+    children[#children + 1] = ui.row({ paddingH = 5, paddingV = 1, radius = 6, fill = "secondary/0.18", align = "center" }, {
+      ui.label({ text = account.label, fontSize = 9, fontWeight = "bold", color = "secondary" }),
+    })
+  end
   local function addLimits(account)
     local nodes = limitNodes(account, vertical)
     if #nodes > 0 then
@@ -97,7 +106,10 @@ local function render()
     if #sessions > 0 then
       children[#children + 1] = ui.label({ text = `{busy}/{#sessions}`, fontSize = 11, color = busy > 0 and "primary" or "on_surface_variant" })
     end
-    for _, a in ipairs(accounts) do addLimits(a) end
+    for _, a in ipairs(accounts) do
+      if multi and #limitNodes(a, vertical) > 0 then accountTag(a) end
+      addLimits(a)
+    end
   else
     -- One dot per session (sessions arrive sorted waiting > busy > idle); with several accounts,
     -- one group of dots per account separated by a thin divider.
@@ -115,11 +127,13 @@ local function render()
           dots[#dots + 1] = ui.box({ width = 7, height = 7, radius = 4, fill = COLOR[s.status] or COLOR.idle })
         end
       end
-      if #dots > 0 then
-        if #children > 1 then divider() end
+      local nodes = limitNodes(account, vertical)
+      if #dots > 0 or #nodes > 0 then
+        accountTag(account)
         for _, d in ipairs(dots) do children[#children + 1] = d end
+        if #dots > 0 and #nodes > 0 then divider() end
+        for _, n in ipairs(nodes) do children[#children + 1] = n end
       end
-      addLimits(account)
     end
   end
   local props = { gap = 4, align = "center" }

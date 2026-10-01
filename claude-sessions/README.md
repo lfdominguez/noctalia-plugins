@@ -68,9 +68,9 @@ It shows one dot per session, sorted by status:
 | Accent color | Working |
 | Grey | Idle |
 
-After the dots it shows your plan usage, by default the 5-hour window (for example `5h ▬▬▭ 45%`), colored by how
-close it is to the limit; pick which windows with **Bar limits**, and a linear bar or a ring with
-**Bar limits style**. Hover it for a summary of every session and your
+After the dots it shows your plan usage, colored by how close it is to the limit. By default that's the 5-hour window
+(for example `5h ▬▬▭ 45%`). Choose which windows with **Bar limits**, and a linear bar or a ring (as in the image above)
+with **Bar limits style**. Hover it for a summary of every session and your
 plan limits. Click it to open the panel. Prefer numbers? Set
 **Bar style** to *Counts*.
 
@@ -131,7 +131,8 @@ With more than one account:
 
 - **Panel.** Each account gets its own section with its name, email, session counts and plan limits. Click an
   account's header to fold it.
-- **Bar widget.** The dots are grouped by account, with a thin divider between groups.
+- **Bar widget.** Each account gets its own group, starting with a name tag (`personal`, `work`) followed by that
+  account's dots and plan limits.
 - **Tooltip and notifications.** Session titles are prefixed with the account name.
 - **Recent sessions.** Each card is tagged with its account and resumes under it.
 - **New sessions.** The **+** picker lets you choose which account to start the session in.
