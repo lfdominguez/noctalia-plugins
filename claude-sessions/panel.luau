@@ -4,7 +4,9 @@ local CTX = tonumber(noctalia.getConfig("context_window")) or 1000000
 
 local sessions = noctalia.state.get("sessions") or {}
 local recent = noctalia.state.get("recent") or {}
-local limits = noctalia.state.get("limits")
+local accounts = noctalia.state.get("accounts") or {}
+local collapsed = {} -- account dir -> true when its section is folded (multi-account only)
+local pickAccount = nil -- account a new session starts under (picker)
 -- Hover: only the innermost interactive node under the pointer reports, so the card and its
 -- buttons each report for the same key; count them so moving between them keeps it active.
 local hoverCount = {} -- item key -> number of its nodes currently hovered
@@ -65,19 +67,36 @@ end
 
 -- ── Items (live + recent), in display order, for keyboard navigation ────────
 
-local function liveGroups()
+local function multi() return #accounts > 1 end
+
+local function liveGroups(account)
   local by = { waiting = {}, busy = {}, idle = {} }
   for _, s in ipairs(sessions) do
-    local list = by[s.status] or by.idle
-    list[#list + 1] = s
+    if account == nil or s.account == account then
+      local list = by[s.status] or by.idle
+      list[#list + 1] = s
+    end
   end
   return by
 end
 
+-- Sections in display order: one per account when there are several, else a single one.
+local function sections()
+  if not multi() then return { { account = nil, info = accounts[1] } } end
+  local out = {}
+  for _, a in ipairs(accounts) do out[#out + 1] = { account = a.dir, info = a } end
+  return out
+end
+
 local function items()
-  local out, by = {}, liveGroups()
-  for _, g in ipairs(GROUPS) do
-    for _, s in ipairs(by[g.status]) do out[#out + 1] = { key = "live:" .. s.pid, live = s } end
+  local out = {}
+  for _, sec in ipairs(sections()) do
+    if not (sec.account and collapsed[sec.account]) then
+      local by = liveGroups(sec.account)
+      for _, g in ipairs(GROUPS) do
+        for _, s in ipairs(by[g.status]) do out[#out + 1] = { key = "live:" .. s.pid, live = s } end
+      end
+    end
   end
   if showRecent then
     for _, r in ipairs(recent) do out[#out + 1] = { key = "recent:" .. r.sessionId, recent = r } end
@@ -86,7 +105,7 @@ local function items()
 end
 
 local function activate(item)
-  if item.live then shared.focus(item.live.pid) else shared.resume(item.recent.cwd, item.recent.sessionId) end
+  if item.live then shared.focus(item.live.pid) else shared.resume(item.recent.account, item.recent.cwd, item.recent.sessionId) end
   panel.close()
 end
 
@@ -149,15 +168,15 @@ local function whereRow(cwd, branch, actions)
   return ui.row({ gap = 5, align = "center" }, where)
 end
 
-local function commonActions(cwd, sid)
+local function commonActions(account, cwd, sid)
   return {
     cardAction("terminal-2", "Open a shell here", function() shared.launch(cwd); panel.close() end),
     cardAction("folder-open", "Open in file manager", function() noctalia.runAsync({ "xdg-open", cwd }); panel.close() end),
     cardAction("copy", "Copy resume command", function()
-      noctalia.copyToClipboard(shared.resumeCommand(cwd, sid), "text/plain")
-      noctalia.notify("Copied", shared.resumeCommand(cwd, sid))
+      noctalia.copyToClipboard(shared.resumeCommand(account, cwd, sid), "text/plain")
+      noctalia.notify("Copied", shared.resumeCommand(account, cwd, sid))
     end),
-    cardAction("file-text", "Open transcript", function() noctalia.runAsync({ "xdg-open", shared.transcript(cwd, sid) }); panel.close() end),
+    cardAction("file-text", "Open transcript", function() noctalia.runAsync({ "xdg-open", shared.transcript(account, cwd, sid) }); panel.close() end),
   }
 end
 
@@ -206,7 +225,7 @@ local function liveCard(s)
   if s.status ~= "busy" and d.turnMs then chips[#chips + 1] = chip("clock", shared.dur(d.turnMs / 1000)) end
   if #chips > 0 then body[#body + 1] = ui.row({ gap = 4, align = "center" }, chips) end
 
-  local actions = commonActions(s.cwd, s.sessionId)
+  local actions = commonActions(s.account, s.cwd, s.sessionId)
   local armed = armedKill == s.pid and noctalia.nowMs() - armedAt < 3000
   actions[#actions + 1] = cardAction("power", "Stop this session (click twice)", function()
       if armed then
@@ -236,13 +255,14 @@ local function recentCard(r)
     }),
   }
   if r.title ~= "" and r.prompt ~= "" then body[#body + 1] = iconLine("message-circle", r.prompt) end
-  local actions = commonActions(r.cwd, r.sessionId)
-  table.insert(actions, 1, cardAction("player-play", "Resume", function() shared.resume(r.cwd, r.sessionId); panel.close() end))
+  if multi() then body[#body + 1] = ui.row({ gap = 4 }, { chip("user-circle", shared.accountLabel(r.account)) }) end
+  local actions = commonActions(r.account, r.cwd, r.sessionId)
+  table.insert(actions, 1, cardAction("player-play", "Resume", function() shared.resume(r.account, r.cwd, r.sessionId); panel.close() end))
   table.insert(body, 2, whereRow(r.cwd, nil, actionsRow(key, actions)))
   return cardShell(key, "idle", {
     badge("history", "secondary"),
     ui.column({ gap = 4, flexGrow = 1 }, body),
-  }, function() shared.resume(r.cwd, r.sessionId); panel.close() end)
+  }, function() shared.resume(r.account, r.cwd, r.sessionId); panel.close() end)
 end
 
 -- ── New-session picker ──────────────────────────────────────────────────────
@@ -254,13 +274,23 @@ local function picker()
   for _, r in ipairs(recent) do addDir(r.cwd) end
   addDir(shared.workRoot())
   local rows = { ui.label({ text = "START CLAUDE IN…", fontSize = 10, fontWeight = "bold", color = "primary" }) }
+  if multi() then
+    pickAccount = pickAccount or accounts[1].dir
+    local choices = { ui.label({ text = "Account", fontSize = 11, color = "on_surface_variant" }) }
+    for _, a in ipairs(accounts) do
+      choices[#choices + 1] = ui.button({ text = a.label, glyph = "user-circle", controlSize = "sm",
+        variant = pickAccount == a.dir and "primary" or "ghost", tooltip = a.email or a.dir,
+        onClick = function() pickAccount = a.dir; render() end })
+    end
+    rows[#rows + 1] = ui.row({ gap = 4, align = "center" }, choices)
+  end
   for i, d in ipairs(dirs) do
     if i > 10 then break end
     rows[#rows + 1] = ui.row({
       key = "dir:" .. d, gap = 8, align = "center", paddingH = 8, paddingV = 6, radius = 8,
       fill = hovered("dir:" .. d) and "on_surface/0.10" or "on_surface/0.04",
       onHover = hoverHandler("dir:" .. d),
-      onClick = function() shared.launch(d, { "claude" }); panel.close() end,
+      onClick = function() shared.launch(d, shared.claudeArgv(multi() and pickAccount or nil)); panel.close() end,
     }, {
       ui.glyph({ name = "folder-plus", size = 14, color = "primary" }),
       ui.label({ text = shared.projectPath(d), fontSize = 12, color = "on_surface", maxLines = 1, flexGrow = 1 }),
@@ -281,7 +311,7 @@ local function sectionHeader(text, count, color, onClick, glyph)
 end
 
 -- Plan usage windows (5h / 7d / Fable 7d), one meter each.
-local function limitsStrip()
+local function limitsStrip(limits)
   if not limits or #limits.windows == 0 then return nil end
   local meters = {}
   for _, w in ipairs(limits.windows) do
@@ -305,6 +335,36 @@ local function limitsStrip()
     strip[#strip + 1] = iconLine("clock", `limits updated {shared.dur(age / 1000)} ago (refresh when a session redraws its status line)`)
   end
   return ui.column({ gap = 6, padding = 10, radius = 10, fill = "on_surface/0.04" }, strip)
+end
+
+local function countPills(by)
+  local pills = {}
+  for _, g in ipairs(GROUPS) do
+    if #by[g.status] > 0 then
+      pills[#pills + 1] = ui.row({ gap = 4, align = "center", paddingH = 8, paddingV = 3, radius = 10, fill = g.color .. "/0.15" }, {
+        ui.glyph({ name = g.glyph, size = 12, color = g.color }),
+        ui.label({ text = tostring(#by[g.status]), fontSize = 11, fontWeight = "bold", color = g.color }),
+      })
+    end
+  end
+  return pills
+end
+
+local function accountHeader(a, by)
+  local folded = collapsed[a.dir]
+  local kids = {
+    ui.glyph({ name = folded and "chevron-right" or "chevron-down", size = 14, color = "on_surface_variant" }),
+    ui.row({ width = 26, height = 26, radius = 13, fill = "secondary/0.18", align = "center", justify = "center" }, {
+      ui.glyph({ name = "user-circle", size = 16, color = "secondary" }),
+    }),
+    ui.column({ gap = 0, flexGrow = 1 }, {
+      ui.label({ text = a.label, fontSize = 13, fontWeight = "bold", color = "on_surface", maxLines = 1 }),
+      ui.label({ text = a.email or a.dir, fontSize = 10, color = "on_surface_variant", maxLines = 1 }),
+    }),
+  }
+  for _, p in ipairs(countPills(by)) do kids[#kids + 1] = p end
+  return ui.row({ key = "acct:" .. a.dir, gap = 8, align = "center", paddingH = 4, paddingV = 4,
+    onClick = function() collapsed[a.dir] = not collapsed[a.dir]; render() end }, kids)
 end
 
 local function countPill(g, n)
@@ -338,17 +398,28 @@ function render()
   header[#header + 1] = action("x", "Close", function() panel.close() end)
 
   local content = {}
-  local strip = limitsStrip()
-  if strip then content[#content + 1] = strip end
   if showPicker then content[#content + 1] = picker() end
-  for _, g in ipairs(GROUPS) do
-    local list = by[g.status]
-    if #list > 0 then
-      content[#content + 1] = sectionHeader(g.title, #list, g.color)
-      for _, s in ipairs(list) do content[#content + 1] = liveCard(s) end
+  for _, sec in ipairs(sections()) do
+    local secBy = liveGroups(sec.account)
+    if sec.account then content[#content + 1] = accountHeader(sec.info, secBy) end
+    if not (sec.account and collapsed[sec.account]) then
+      local strip = limitsStrip(sec.info and sec.info.limits)
+      if strip then content[#content + 1] = strip end
+      local any = false
+      for _, g in ipairs(GROUPS) do
+        local list = secBy[g.status]
+        if #list > 0 then
+          any = true
+          content[#content + 1] = sectionHeader(g.title, #list, g.color)
+          for _, s in ipairs(list) do content[#content + 1] = liveCard(s) end
+        end
+      end
+      if sec.account and not any then
+        content[#content + 1] = iconLine("moon", "No sessions running", "on_surface_variant")
+      end
     end
   end
-  if #sessions == 0 then
+  if #sessions == 0 and not multi() then
     content[#content + 1] = ui.column({ gap = 8, align = "center", justify = "center", paddingV = 40 }, {
       ui.glyph({ name = "moon", size = 36, color = "on_surface_variant" }),
       ui.label({ text = "No Claude sessions running", color = "on_surface_variant" }),
@@ -395,11 +466,11 @@ end
 
 noctalia.state.watch("sessions", function(v) sessions = v or {}; render() end)
 noctalia.state.watch("recent", function(v) recent = v or {}; render() end)
-noctalia.state.watch("limits", function(v) limits = v; render() end)
+noctalia.state.watch("accounts", function(v) accounts = v or {}; render() end)
 function onOpen(_ctx)
   sessions = noctalia.state.get("sessions") or {}
   recent = noctalia.state.get("recent") or {}
-  limits = noctalia.state.get("limits")
+  accounts = noctalia.state.get("accounts") or {}
   hoverCount, selected, showPicker, armedKill = {}, nil, false, nil
   noctalia.state.set("command", { action = "refresh", at = noctalia.nowMs() })
   panel.setWantsSecondTicks(true)

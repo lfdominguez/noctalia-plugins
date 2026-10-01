@@ -6,7 +6,10 @@
 . "$(dirname "$0")/wm.sh"
 dir=$1; shift
 command -v kitty >/dev/null || exit 10
-if [ "$1" = claude ]; then shift; set -- "$(command -v claude || echo "$HOME/.local/bin/claude")" "$@"; fi
+# Resolve a bare "claude" (possibly after `env CLAUDE_CONFIG_DIR=...`) to its full path: tabs and
+# terminals may not have ~/.local/bin on PATH.
+claude=$(command -v claude || echo "$HOME/.local/bin/claude")
+for a in "$@"; do shift; [ "$a" = claude ] && a=$claude; set -- "$@" "$a"; done
 [ $# -gt 0 ] && set -- sh -c '"$@"; exec "${SHELL:-sh}"' _ "$@"
 # Most recently used kitty first; instances started without remote control just refuse.
 for kpid in $(wm_recent_pids kitty); do

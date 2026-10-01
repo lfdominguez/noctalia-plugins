@@ -16,6 +16,8 @@ and jump to any session's terminal in one click, down to the exact kitty tab.
 - 🎯 **Jump to the terminal.** Click a session to focus its window; on kitty it lands on the exact tab or split.
 - ⏪ **Resume and start sessions.** Reopen recently closed sessions, or start a new one in a recent project.
 - ⌨️ **Keyboard and launcher.** Navigate the panel without a mouse, or search sessions from the launcher with `/cs`.
+- 👥 **Multiple accounts.** Sessions started with different `CLAUDE_CONFIG_DIR`s (e.g. personal and work) are
+  detected automatically and shown per account, each with its own plan limits.
 - 🖥️ **Works on Hyprland, niri and sway.**
 
 ## Plugin
@@ -109,6 +111,31 @@ The **+** button in the header starts a new Claude session in one of your recent
 | `r` | Show or hide Recent |
 | `Esc` | Close |
 
+### Multiple accounts
+
+Claude Code keeps each account in its own config dir: `~/.claude` by default, or whatever `CLAUDE_CONFIG_DIR`
+points at. For example:
+
+```sh
+CLAUDE_CONFIG_DIR=~/.claude-work claude
+```
+
+The plugin picks up the config dir of every running session automatically and remembers it, so that account's
+recent sessions stay available after you close it. To show an account before you start any session in it, add its
+dir to **Extra Claude config dirs**.
+
+With more than one account:
+
+- **Panel.** Each account gets its own section with its name, email, session counts and plan limits. Click an
+  account's header to fold it.
+- **Bar widget.** The dots are grouped by account, with a thin divider between groups.
+- **Tooltip and notifications.** Session titles are prefixed with the account name.
+- **Recent sessions.** Each card is tagged with its account and resumes under it.
+- **New sessions.** The **+** picker lets you choose which account to start the session in.
+
+An account's name comes from its dir: `~/.claude` is *default*, and `~/.claude-work` is *work*. To rename one, use
+**Account names**.
+
 ### Launcher
 
 Type `/cs` followed by part of a session title or project path, for example `/cs api`. Live sessions are listed
@@ -126,6 +153,8 @@ Open them from **Settings → Plugins → Claude Sessions**.
 | `hide_idle_hours` | `int` | `0` | Hide live sessions that have been idle longer than this many hours. `0` shows all. |
 | `recent_count` | `int` | `8` | Closed sessions listed under Recent and in the launcher. `0` disables Recent. |
 | `bar_style` | `select` | `dots` | `dots`: one dot per session. `counts`: waiting count and busy/total. |
+| `config_dirs` | `string_list` | empty | Claude config dirs (`CLAUDE_CONFIG_DIR`) to always show, one per account. Dirs of running sessions are detected automatically. |
+| `account_labels` | `string_map` | empty | Display name per config dir, e.g. `~/.claude-work` → `Work`. *(Advanced)* |
 | `work_root` | `folder` | empty | Project paths under this folder are shown relative to it (e.g. `~/Work`). Empty shows full paths. |
 | `context_window` | `int` | `1000000` | Context window size in tokens, used to draw the context gauge. |
 
@@ -147,17 +176,20 @@ Everything is read locally. The only network access is the optional plan-limits 
 
 | What | Where it comes from |
 | --- | --- |
-| Live sessions | `~/.claude/sessions/*.json`, written by Claude Code and read every 2 seconds. Leftover files from crashed sessions are ignored by checking `/proc/<pid>`. |
-| Session details | The session transcript in `~/.claude/projects/`, read by `details.sh` only when it changes. |
-| Last prompt | `~/.claude/history.jsonl` |
-| Cost | Estimated from token usage and `~/.claude/pricing-cache.json`. |
+| Accounts | `~/.claude`, the `config_dirs` setting, and the `CLAUDE_CONFIG_DIR` of running `claude` processes, found by `running.sh` once a minute. The account email is read from `.claude.json`. |
+| Live sessions | `<config dir>/sessions/*.json`, written by Claude Code and read every 2 seconds. Leftover files from crashed sessions are ignored by checking `/proc/<pid>`. |
+| Session details | The session transcript in `<config dir>/projects/`, read by `details.sh` only when it changes. |
+| Last prompt | `<config dir>/history.jsonl` |
+| Cost | Estimated from token usage and `pricing-cache.json`. |
 | Terminal | The session process's environment (`/proc/<pid>/environ`), checked once for `KITTY_PID`, `KITTY_WINDOW_ID` and `TERM_PROGRAM`. Nothing else from it is kept. |
 | Plan limits | See below. |
 
-**Plan limits.** If the [`claude-dashboard`](https://github.com/uppinote20/claude-dashboard) Claude Code plugin is
-installed and its cache (`~/.cache/claude-dashboard/cache-*.json`) is less than 5 minutes old, it is used as-is.
-Otherwise `limits.sh` calls `https://api.anthropic.com/api/oauth/usage`, at most once every 5 minutes, with Claude
-Code's own OAuth token from `~/.claude/.credentials.json`. The token is:
+**Plan limits** are fetched separately for each account. If the
+[`claude-dashboard`](https://github.com/uppinote20/claude-dashboard) Claude Code plugin is installed and the account's
+cache file is less than 5 minutes old, it is used as-is. That file is `~/.cache/claude-dashboard/cache-<hash>.json`,
+where the hash is the first 16 hex characters of the SHA-256 of the account's token, computed locally the same way
+`claude-dashboard` does. Otherwise `limits.sh` calls `https://api.anthropic.com/api/oauth/usage`, at most once every
+5 minutes per account, with that account's own OAuth token from `<config dir>/.credentials.json`. The token is:
 
 - only read, never refreshed or written;
 - passed to `curl` on stdin, so it doesn't appear in the process list;
@@ -167,13 +199,14 @@ If the token has expired, the call is skipped until Claude Code refreshes it.
 
 **Processes it runs:**
 
-- `jq`, `grep`, `tail` and `find` to extract data;
+- `jq`, `grep`, `tail`, `find` and `sha256sum` to extract data;
+- `pgrep` (in `running.sh`) to find running `claude` processes;
 - `kitty @`, `hyprctl`, `niri msg` or `swaymsg` to focus windows and open tabs;
 - `xdg-open`;
 - `kill -TERM <pid>` when you stop a session;
 - `claude --resume` when you resume one.
 
-**Files written:** none.
+**Files written:** `accounts.json` in the plugin's data dir, which lists the config dirs seen so far.
 
 ### Troubleshooting
 

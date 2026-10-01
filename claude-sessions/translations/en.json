@@ -32,6 +32,14 @@
     "context_window": {
       "label": "Context window (tokens)",
       "description": "Used to draw the context gauge."
+    },
+    "config_dirs": {
+      "label": "Extra Claude config dirs",
+      "description": "Claude Code config dirs (CLAUDE_CONFIG_DIR) to always show, one per account. Dirs of running sessions are detected automatically."
+    },
+    "account_labels": {
+      "label": "Account names",
+      "description": "Optional display name per config dir, e.g. ~/.claude-work = Work. By default the name comes from the dir (~/.claude-work shows as \"work\")."
     }
   }
 }

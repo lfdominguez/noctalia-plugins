@@ -25,8 +25,29 @@ end
 
 function M.ago(ms) return M.dur((noctalia.nowMs() - ms) / 1000) end
 
-function M.transcript(cwd, sid)
-  return `{HOME}/.claude/projects/{(string.gsub(cwd, "[^%w]", "-"))}/{sid}.jsonl`
+-- Accounts are Claude config dirs (see service.luau); ~/.claude is the default one.
+local DEFAULT_DIR = HOME .. "/.claude"
+
+function M.accounts() return noctalia.state.get("accounts") or {} end
+
+function M.multiAccount() return #M.accounts() > 1 end
+
+function M.accountLabel(dir)
+  for _, a in ipairs(M.accounts()) do if a.dir == dir then return a.label end end
+  return dir and (string.match(dir, "([^/]+)$") or dir) or "default"
+end
+
+function M.transcript(account, cwd, sid)
+  return `{account or DEFAULT_DIR}/projects/{(string.gsub(cwd, "[^%w]", "-"))}/{sid}.jsonl`
+end
+
+-- argv running claude (with extra args) under the given account.
+function M.claudeArgv(account, ...)
+  local argv = {}
+  if account and account ~= DEFAULT_DIR then argv = { "env", "CLAUDE_CONFIG_DIR=" .. account } end
+  argv[#argv + 1] = "claude"
+  for _, a in ipairs({ ... }) do argv[#argv + 1] = a end
+  return argv
 end
 
 function M.focus(pid) noctalia.runAsync({ PLUGIN .. "/focus.sh", tostring(pid) }) end
@@ -46,8 +67,11 @@ function M.launch(dir, argv)
   if not noctalia.runAsync(cmd, function(r) if r.exitCode ~= 0 then fallback() end end, 15000) then fallback() end
 end
 
-function M.resume(cwd, sid) M.launch(cwd, { "claude", "--resume", sid }) end
+function M.resume(account, cwd, sid) M.launch(cwd, M.claudeArgv(account, "--resume", sid)) end
 
-function M.resumeCommand(cwd, sid) return `cd '{cwd}' && claude --resume {sid}` end
+function M.resumeCommand(account, cwd, sid)
+  local env = account and account ~= DEFAULT_DIR and `CLAUDE_CONFIG_DIR={quote(account)} ` or ""
+  return `cd {quote(cwd)} && {env}claude --resume {sid}`
+end
 
 return M

@@ -1,6 +1,6 @@
 id = "lfdominguez/claude-sessions"
 name = "Claude Sessions"
-version = "1.2.0"
+version = "1.3.0"
 plugin_api = 24
 author = "lfdominguez"
 icon = "brain"
@@ -60,6 +60,21 @@ options = [
   { value = "dots", label_key = "settings.bar_style.dots" },
   { value = "counts", label_key = "settings.bar_style.counts" },
 ]
+
+[[setting]]
+key = "config_dirs"
+type = "string_list"
+label_key = "settings.config_dirs.label"
+description_key = "settings.config_dirs.description"
+default = []
+
+[[setting]]
+key = "account_labels"
+type = "string_map"
+label_key = "settings.account_labels.label"
+description_key = "settings.account_labels.description"
+default = {}
+advanced = true
 
 [[setting]]
 key = "work_root"

@@ -1,11 +1,14 @@
 #!/bin/sh
-# Print Claude plan limits as [{label, percent, resets_at}] using Claude
+# limits.sh CONFIG_DIR fetch: print Claude plan limits as [{label, percent, resets_at}] using Claude
 # Code's own OAuth token. Read-only: we never refresh the token (Claude Code owns it); if it has
 # expired we just fail until Claude Code refreshes it. The token goes to curl on stdin, so it
 # never appears in the process list, and is never printed.
-creds="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
+# limits.sh CONFIG_DIR hash: print the 16-hex-char sha256 prefix of the token, which is how the
+# claude-dashboard plugin names its per-account cache file (cache-<hash>.json).
+creds="${1:-$HOME/.claude}/.credentials.json"
 token=$(jq -r '.claudeAiOauth.accessToken // empty' "$creds" 2>/dev/null)
 [ -n "$token" ] || { echo "no Claude Code OAuth token in $creds" >&2; exit 2; }
+if [ "$2" = hash ]; then printf '%s' "$token" | sha256sum | cut -c1-16; exit 0; fi
 expires=$(jq -r '.claudeAiOauth.expiresAt // 0' "$creds")
 [ "$expires" -gt "$(($(date +%s) * 1000))" ] || { echo "OAuth token expired" >&2; exit 3; }
 printf 'header = "Authorization: Bearer %s"\n' "$token" \
