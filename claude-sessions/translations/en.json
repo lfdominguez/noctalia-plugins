@@ -49,6 +49,11 @@
       "none": "Hidden",
       "seven_day": "7-day window",
       "five_and_seven": "5-hour and 7-day windows"
+    },
+    "bar_limits_style": {
+      "label": "Bar limits style",
+      "bar": "Linear bar",
+      "ring": "Ring"
     }
   }
 }

@@ -1,6 +1,6 @@
 id = "lfdominguez/claude-sessions"
 name = "Claude Sessions"
-version = "1.4.0"
+version = "1.5.0"
 plugin_api = 24
 author = "lfdominguez"
 icon = "brain"
@@ -74,6 +74,17 @@ options = [
   { value = "all", label_key = "settings.bar_limits.all" },
   { value = "none", label_key = "settings.bar_limits.none" },
 ]
+
+[[setting]]
+key = "bar_limits_style"
+type = "select"
+label_key = "settings.bar_limits_style.label"
+default = "bar"
+options = [
+  { value = "bar", label_key = "settings.bar_limits_style.bar" },
+  { value = "ring", label_key = "settings.bar_limits_style.ring" },
+]
+visible_when = { key = "bar_limits", values = ["5h", "7d", "5h_7d", "all"] }
 
 [[setting]]
 key = "config_dirs"

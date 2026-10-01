@@ -3,6 +3,7 @@ local sessions = noctalia.state.get("sessions") or {}
 local accounts = noctalia.state.get("accounts") or {}
 local style = noctalia.getConfig("bar_style") or "dots"
 local limitsMode = noctalia.getConfig("bar_limits") or "5h" -- "5h" | "7d" | "5h_7d" | "all" | "none"
+local gaugeStyle = noctalia.getConfig("bar_limits_style") or "bar" -- "bar" | "ring"
 local SHOWN = { ["5h"] = { ["5h"] = true }, ["7d"] = { ["7d"] = true }, ["5h_7d"] = { ["5h"] = true, ["7d"] = true } }
 local COLOR = { waiting = "error", busy = "primary", idle = "on_surface_variant/0.45" }
 local MAX_DOTS = 8
@@ -11,6 +12,29 @@ local function resetsIn(ms)
   local left = ms and ms > noctalia.nowMs() and math.floor((ms - noctalia.nowMs()) / 60000) or nil
   if not left then return nil end
   return left >= 1440 and `{left // 1440}d {left % 1440 // 60}h` or `{left // 60}h {left % 60}m`
+end
+
+-- Noctalia has no circular progress control and images can't follow the theme palette, so the ring
+-- is a 9x9 grid of tiny boxes: cells on the circle are filled clockwise from 12 o'clock up to `progress`.
+local RING_N, RING_CELL = 9, 2
+local function ring(progress, color)
+  local c = (RING_N - 1) / 2
+  local radius = c - 0.3
+  local rows = {}
+  for i = 0, RING_N - 1 do
+    local cells = {}
+    for j = 0, RING_N - 1 do
+      local dx, dy = j - c, i - c
+      local fill = "#00000000"
+      if math.abs(math.sqrt(dx * dx + dy * dy) - radius) < 0.55 then
+        local angle = (math.atan2(dx, -dy) / (2 * math.pi)) % 1
+        fill = angle < progress and color or "on_surface/0.18"
+      end
+      cells[#cells + 1] = ui.box({ width = RING_CELL, height = RING_CELL, radius = RING_CELL / 2, fill = fill })
+    end
+    rows[#rows + 1] = ui.row({ gap = 0 }, cells)
+  end
+  return ui.column({ gap = 0 }, rows)
 end
 
 local function severity(p) return p >= 90 and "error" or p >= 70 and "secondary" or "primary" end
@@ -23,8 +47,9 @@ local function limitNodes(account, vertical)
     if limitsMode == "all" or (SHOWN[limitsMode] and SHOWN[limitsMode][w.label]) then
       local pct = math.floor(w.percent + 0.5)
       local color = severity(pct)
-      local gauge = ui.progress({ progress = math.max(0, math.min(100, pct)) / 100, width = vertical and 16 or 28,
-        height = 4, fill = color, track = "on_surface/0.18" })
+      local progress = math.max(0, math.min(100, pct)) / 100
+      local gauge = gaugeStyle == "ring" and ring(progress, color)
+        or ui.progress({ progress = progress, width = vertical and 16 or 28, height = 4, fill = color, track = "on_surface/0.18" })
       local kids = {
         ui.label({ text = w.label, fontSize = 9, color = "on_surface_variant" }),
         gauge,
