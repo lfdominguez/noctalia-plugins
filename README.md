@@ -6,7 +6,7 @@ Plugins for the [Noctalia](https://noctalia.dev) desktop shell (v5+), by [@lfdom
 
 | | Plugin | Description |
 | --- | --- | --- |
-| <img src="claude-sessions/thumbnail.webp" width="240" alt="Claude Sessions"> | **[Claude Sessions](claude-sessions/)**<br>`lfdominguez/claude-sessions` | Every Claude Code session at a glance: which are working, which need you, what each is doing, your plan limits, and one click to jump to its terminal (down to the exact kitty tab). |
+| <img src="claude-sessions/thumbnail.webp" width="240" alt="Claude Sessions"> | **[Claude Sessions](claude-sessions/)**<br>`lfdominguez/claude-sessions` | Every Claude Code session at a glance, across all your accounts: which are working, which need you, what each is doing, your plan limits right on the bar, and one click to jump to its terminal (down to the exact kitty tab). |
 
 ## Installation
 
