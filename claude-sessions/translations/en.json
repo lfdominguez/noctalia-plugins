@@ -1,0 +1,37 @@
+{
+  "settings": {
+    "notify_waiting": {
+      "label": "Notify when a session needs you",
+      "description": "Desktop notification when a session starts waiting for input or a permission."
+    },
+    "notify_finished": {
+      "label": "Notify when a long turn finishes",
+      "description": "Desktop notification when a session goes from working to idle."
+    },
+    "finished_min_minutes": {
+      "label": "Minimum turn length (minutes)",
+      "description": "Only notify about turns that took at least this long."
+    },
+    "hide_idle_hours": {
+      "label": "Hide sessions idle for (hours)",
+      "description": "Hide live sessions idle longer than this. 0 shows all."
+    },
+    "recent_count": {
+      "label": "Recent sessions to show",
+      "description": "Closed sessions listed in the Recent section and the launcher. 0 disables it."
+    },
+    "bar_style": {
+      "label": "Bar style",
+      "dots": "One dot per session",
+      "counts": "Counts"
+    },
+    "work_root": {
+      "label": "Projects root",
+      "description": "Project paths under this folder are shown relative to it. Empty shows full paths."
+    },
+    "context_window": {
+      "label": "Context window (tokens)",
+      "description": "Used to draw the context gauge."
+    }
+  }
+}
