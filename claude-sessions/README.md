@@ -4,7 +4,7 @@
 See which sessions are working, which are waiting for you and what each one is doing, keep an eye on your plan limits,
 and jump to any session's terminal in one click, down to the exact kitty tab.
 
-![Claude Sessions panel](screenshot.png)
+![Claude Sessions panel with two accounts](images/panel.png)
 
 ## Features
 
@@ -58,7 +58,7 @@ terminal window, and new sessions open in Noctalia's configured terminal.
 
 Add **Claude Sessions** to a bar from the widget picker.
 
-![Bar widget](bar.png)
+![Bar widget with one account](images/bar-single.png)
 
 It shows one dot per session, sorted by status:
 
@@ -68,11 +68,17 @@ It shows one dot per session, sorted by status:
 | Accent color | Working |
 | Grey | Idle |
 
-After the dots it shows your plan usage, colored by how close it is to the limit. By default that's the 5-hour window
-(for example `5h ▬▬▭ 45%`). Choose which windows with **Bar limits**, and a linear bar or a ring (as in the image above)
-with **Bar limits style**. Hover it for a summary of every session and your
-plan limits. Click it to open the panel. Prefer numbers? Set
-**Bar style** to *Counts*.
+After the dots it shows your plan usage, colored by how close it is to the limit. By default that's the 5-hour window,
+as in the image above. Choose which windows with **Bar limits**, and a linear bar or a ring with **Bar limits style**.
+Here it shows the 5-hour and 7-day windows as rings, for two accounts:
+
+![Bar widget with two accounts and ring gauges](images/bar-accounts-rings.png)
+
+Prefer numbers? Set **Bar style** to *Counts* to show the number of sessions waiting, then busy/total:
+
+![Bar widget in counts style](images/bar-counts.png)
+
+Hover the widget for a summary of every session and your plan limits. Click it to open the panel.
 
 ### Panel
 
@@ -92,6 +98,8 @@ From top to bottom:
 
 **Click a card** to jump to its terminal. **Hover it** (or select it with the keyboard) to reveal its actions:
 
+![A selected card showing its actions](images/panel-actions.png)
+
 | Action | What it does |
 | --- | --- |
 | ▶ Resume *(recent only)* | Reopens the session with `claude --resume` in a new terminal tab |
@@ -101,7 +109,10 @@ From top to bottom:
 | Transcript | Opens the session's transcript file |
 | Stop *(live only)* | Stops the session; click twice to confirm |
 
-The **+** button in the header starts a new Claude session in one of your recent projects.
+The **+** button in the header starts a new Claude session in one of your recent projects. With several accounts you
+also choose which account it runs under:
+
+![New session picker](images/panel-new-session.png)
 
 #### Keyboard
 
@@ -137,6 +148,8 @@ With more than one account:
 - **Recent sessions.** Each card is tagged with its account and resumes under it.
 - **New sessions.** The **+** picker lets you choose which account to start the session in.
 
+![Accounts folded, with Recent sessions open](images/panel-recent.png)
+
 An account's name comes from its dir: `~/.claude` is *default*, and `~/.claude-work` is *work*. To rename one, use
 **Account names**.
 
@@ -144,6 +157,8 @@ An account's name comes from its dir: `~/.claude` is *default*, and `~/.claude-w
 
 Type `/cs` followed by part of a session title or project path, for example `/cs api`. Live sessions are listed
 first: activating one jumps to it. Activating a recent session resumes it in a new terminal.
+
+![Launcher search](images/launcher.png)
 
 ## Settings
 
