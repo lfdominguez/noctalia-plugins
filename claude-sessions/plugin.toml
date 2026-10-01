@@ -1,6 +1,6 @@
 id = "lfdominguez/claude-sessions"
 name = "Claude Sessions"
-version = "1.3.0"
+version = "1.4.0"
 plugin_api = 24
 author = "lfdominguez"
 icon = "brain"
@@ -59,6 +59,20 @@ default = "dots"
 options = [
   { value = "dots", label_key = "settings.bar_style.dots" },
   { value = "counts", label_key = "settings.bar_style.counts" },
+]
+
+[[setting]]
+key = "bar_limits"
+type = "select"
+label_key = "settings.bar_limits.label"
+description_key = "settings.bar_limits.description"
+default = "5h"
+options = [
+  { value = "5h", label_key = "settings.bar_limits.five_hour" },
+  { value = "7d", label_key = "settings.bar_limits.seven_day" },
+  { value = "5h_7d", label_key = "settings.bar_limits.five_and_seven" },
+  { value = "all", label_key = "settings.bar_limits.all" },
+  { value = "none", label_key = "settings.bar_limits.none" },
 ]
 
 [[setting]]

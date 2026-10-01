@@ -40,6 +40,15 @@
     "account_labels": {
       "label": "Account names",
       "description": "Optional display name per config dir, e.g. ~/.claude-work = Work. By default the name comes from the dir (~/.claude-work shows as \"work\")."
+    },
+    "bar_limits": {
+      "label": "Bar limits",
+      "description": "Plan usage shown on the bar widget, next to each account's sessions.",
+      "five_hour": "5-hour window",
+      "all": "All windows (incl. per-model, e.g. Fable 7d)",
+      "none": "Hidden",
+      "seven_day": "7-day window",
+      "five_and_seven": "5-hour and 7-day windows"
     }
   }
 }

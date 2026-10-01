@@ -68,7 +68,9 @@ It shows one dot per session, sorted by status:
 | Accent color | Working |
 | Grey | Idle |
 
-Hover it for a summary of every session and your plan limits. Click it to open the panel. Prefer numbers? Set
+After the dots it shows your plan usage, by default the 5-hour window (for example `5h ▬▬▭ 45%`), colored by how
+close it is to the limit; pick which windows with **Bar limits**. Hover it for a summary of every session and your
+plan limits. Click it to open the panel. Prefer numbers? Set
 **Bar style** to *Counts*.
 
 ### Panel
@@ -153,6 +155,7 @@ Open them from **Settings → Plugins → Claude Sessions**.
 | `hide_idle_hours` | `int` | `0` | Hide live sessions that have been idle longer than this many hours. `0` shows all. |
 | `recent_count` | `int` | `8` | Closed sessions listed under Recent and in the launcher. `0` disables Recent. |
 | `bar_style` | `select` | `dots` | `dots`: one dot per session. `counts`: waiting count and busy/total. |
+| `bar_limits` | `select` | `5h` | Plan usage shown on the bar after each account's dots: `5h`, `7d`, `5h_7d`, `all` (every window, including per-model ones like Fable 7d) or `none`. |
 | `config_dirs` | `string_list` | empty | Claude config dirs (`CLAUDE_CONFIG_DIR`) to always show, one per account. Dirs of running sessions are detected automatically. |
 | `account_labels` | `string_map` | empty | Display name per config dir, e.g. `~/.claude-work` → `Work`. *(Advanced)* |
 | `work_root` | `folder` | empty | Project paths under this folder are shown relative to it (e.g. `~/Work`). Empty shows full paths. |
