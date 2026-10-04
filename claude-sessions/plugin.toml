@@ -1,6 +1,6 @@
 id = "lfdominguez/claude-sessions"
 name = "Claude Sessions"
-version = "1.5.2"
+version = "1.6.0"
 plugin_api = 24
 author = "lfdominguez"
 icon = "brain"
@@ -32,6 +32,13 @@ default = 2
 min = 0
 max = 240
 visible_when = { key = "notify_finished", values = ["true"] }
+
+[[setting]]
+key = "show_elsewhere"
+type = "bool"
+label_key = "settings.show_elsewhere.label"
+description_key = "settings.show_elsewhere.description"
+default = true
 
 [[setting]]
 key = "hide_idle_hours"

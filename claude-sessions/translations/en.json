@@ -12,6 +12,10 @@
       "label": "Minimum turn length (minutes)",
       "description": "Only notify about turns that took at least this long."
     },
+    "show_elsewhere": {
+      "label": "Show Remote Control sessions on other machines",
+      "description": "Lists your live Remote Control sessions running elsewhere (checked every minute through Claude's session list). Clicking one opens it on claude.ai."
+    },
     "hide_idle_hours": {
       "label": "Hide sessions idle for (hours)",
       "description": "Hide live sessions idle longer than this. 0 shows all."
