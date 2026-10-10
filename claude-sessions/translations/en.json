@@ -41,6 +41,10 @@
       "label": "Extra Claude config dirs",
       "description": "Claude Code config dirs (CLAUDE_CONFIG_DIR) to always show, one per account. Dirs of running sessions are detected automatically."
     },
+    "workspace_dirs": {
+      "label": "Additional paths for Claude workspaces",
+      "description": "Folders that hold one config dir per account, e.g. ~/Claudes with ~/Claudes/work and ~/Claudes/client. Every subfolder with a projects or sessions dir is shown as an account."
+    },
     "account_labels": {
       "label": "Account names",
       "description": "Optional display name per config dir, e.g. ~/.claude-work = Work. By default the name comes from the dir (~/.claude-work shows as \"work\")."

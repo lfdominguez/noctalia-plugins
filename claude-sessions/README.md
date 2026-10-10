@@ -140,7 +140,13 @@ CLAUDE_CONFIG_DIR=~/.claude-work claude
 
 The plugin picks up the config dir of every running session automatically and remembers it, so that account's
 recent sessions stay available after you close it. To show an account before you start any session in it, add its
-dir to **Extra Claude config dirs**.
+dir to **Extra Claude config dirs**. If you keep all your accounts in one folder (e.g. `~/Claudes/work`,
+`~/Claudes/client`), add that folder to **Additional paths for Claude workspaces** instead: every config dir inside it
+shows up, including ones you add later.
+
+Sessions that get their account by bind-mounting another dir over `~/.claude` in their own mount namespace (for
+example `bwrap --bind ~/.claude-work ~/.claude claude`) are detected too: the plugin reads the mount from
+`/proc/<pid>/mountinfo`.
 
 With more than one account:
 
@@ -208,6 +214,7 @@ Open them from **Settings → Plugins → Claude Sessions**.
 | `bar_limits` | `select` | `5h` | Plan usage shown on the bar after each account's dots: `5h`, `7d`, `5h_7d`, `all` (every window, including per-model ones like Fable 7d) or `none`. |
 | `bar_limits_style` | `select` | `bar` | How each limit is drawn on the bar: a linear `bar` or a circular `ring`. |
 | `config_dirs` | `string_list` | empty | Claude config dirs (`CLAUDE_CONFIG_DIR`) to always show, one per account. Dirs of running sessions are detected automatically. |
+| `workspace_dirs` | `string_list` | empty | Folders that hold one config dir per account (e.g. `~/Claudes`). Every subfolder with a `projects` or `sessions` dir is shown as an account. |
 | `account_labels` | `string_map` | empty | Display name per config dir, e.g. `~/.claude-work` → `Work`. *(Advanced)* |
 | `work_root` | `folder` | empty | Project paths under this folder are shown relative to it (e.g. `~/Work`). Empty shows full paths. |
 | `context_window` | `int` | `1000000` | Context window size in tokens, used to draw the context gauge. |
@@ -231,7 +238,7 @@ list of Remote Control sessions on other machines.
 
 | What | Where it comes from |
 | --- | --- |
-| Accounts | `~/.claude`, the `config_dirs` setting, and the `CLAUDE_CONFIG_DIR` of running `claude` processes, found by `running.sh` once a minute. The account email is read from `.claude.json`. |
+| Accounts | `~/.claude`, the `config_dirs` setting, config dirs inside the `workspace_dirs` folders, and the `CLAUDE_CONFIG_DIR` of running `claude` processes (or, in a separate mount namespace, the dir mounted over `~/.claude`, from `/proc/<pid>/mountinfo`), found by `running.sh` once a minute. The account email is read from `.claude.json`. |
 | Live sessions | `<config dir>/sessions/*.json`, written by Claude Code and read every 2 seconds. Leftover files from crashed sessions are ignored by checking `/proc/<pid>`. |
 | Session details | The session transcript in `<config dir>/projects/`, read by `details.sh` only when it changes. |
 | Last prompt | `<config dir>/history.jsonl` |

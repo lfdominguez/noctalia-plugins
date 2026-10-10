@@ -93,11 +93,20 @@ local function saveAccounts()
   noctalia.writeFile(SAVED, noctalia.json.encode(dirs))
 end
 
--- Known accounts: the default dir, the `config_dirs` setting, dirs seen before, and (async, via
--- running.sh) the config dirs of running claude processes.
+-- Known accounts: the default dir, the `config_dirs` setting, config dirs inside the `workspace_dirs`
+-- folders, dirs seen before, and (async, via running.sh) the config dirs of running claude processes.
 local function discoverAccounts()
   local added = addAccount(DEFAULT_DIR)
   for _, d in ipairs(cfg("config_dirs", {}) or {}) do added = addAccount(d) or added end
+  for _, root in ipairs(cfg("workspace_dirs", {}) or {}) do
+    root = normDir(root)
+    for _, name in ipairs(root and noctalia.listDir(root) or {}) do
+      local d = string.find(name, "/") and name or root .. "/" .. name
+      if noctalia.fileExists(d .. "/projects") or noctalia.fileExists(d .. "/sessions") then
+        added = addAccount(d) or added
+      end
+    end
+  end
   local saved = SAVED and noctalia.json.decode(noctalia.readFile(SAVED) or "")
   for _, d in ipairs(type(saved) == "table" and saved or {}) do added = addAccount(d) or added end
   for dir, a in pairs(accounts) do

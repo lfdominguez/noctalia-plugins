@@ -1,6 +1,6 @@
 id = "lfdominguez/claude-sessions"
 name = "Claude Sessions"
-version = "1.6.0"
+version = "1.6.1"
 plugin_api = 24
 author = "lfdominguez"
 icon = "brain"
@@ -98,6 +98,13 @@ key = "config_dirs"
 type = "string_list"
 label_key = "settings.config_dirs.label"
 description_key = "settings.config_dirs.description"
+default = []
+
+[[setting]]
+key = "workspace_dirs"
+type = "string_list"
+label_key = "settings.workspace_dirs.label"
+description_key = "settings.workspace_dirs.description"
 default = []
 
 [[setting]]
