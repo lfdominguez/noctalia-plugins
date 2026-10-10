@@ -148,6 +148,10 @@ Sessions that get their account by bind-mounting another dir over `~/.claude` in
 example `bwrap --bind ~/.claude-work ~/.claude claude`) are detected too: the plugin reads the mount from
 `/proc/<pid>/mountinfo`.
 
+Config dirs may share one `projects` dir (for example through a symlink, so that `claude --resume` sees every
+session from every account). Recent sessions are still attributed to the account that started them, using the
+`session-env/<session id>` dir Claude Code creates in the config dir a session starts in.
+
 With more than one account:
 
 - **Panel.** Each account gets its own section with its name, email, session counts and plan limits. Click an
@@ -241,6 +245,7 @@ list of Remote Control sessions on other machines.
 | Accounts | `~/.claude`, the `config_dirs` setting, config dirs inside the `workspace_dirs` folders, and the `CLAUDE_CONFIG_DIR` of running `claude` processes (or, in a separate mount namespace, the dir mounted over `~/.claude`, from `/proc/<pid>/mountinfo`), found by `running.sh` once a minute. The account email is read from `.claude.json`. |
 | Live sessions | `<config dir>/sessions/*.json`, written by Claude Code and read every 2 seconds. Leftover files from crashed sessions are ignored by checking `/proc/<pid>`. |
 | Session details | The session transcript in `<config dir>/projects/`, read by `details.sh` only when it changes. |
+| Recent sessions | Transcripts in `<config dir>/projects/`, plus whether `<config dir>/session-env/<session id>` exists and when it was created, to tell which account a session belongs to when config dirs share a `projects` dir. Read by `recent.sh` once a minute. |
 | Last prompt | `<config dir>/history.jsonl` |
 | Cost | Estimated from token usage and `pricing-cache.json`. |
 | Terminal | The session process's environment (`/proc/<pid>/environ`), checked once for `KITTY_PID`, `KITTY_WINDOW_ID` and `TERM_PROGRAM`. Nothing else from it is kept. |
