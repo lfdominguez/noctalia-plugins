@@ -65,9 +65,15 @@ end
 local function refreshAccountInfo(a)
   a.label = labelFor(a.dir)
   -- Account metadata lives in .claude.json: inside the config dir, or next to ~/.claude by default.
+  -- It grows to hundreds of KB, so decode it only when it changed (size + mtime to the ms).
   local file = a.dir == DEFAULT_DIR and HOME .. "/.claude.json" or a.dir .. "/.claude.json"
-  local info = noctalia.json.decode(noctalia.readFile(file) or "")
-  a.email = type(info) == "table" and type(info.oauthAccount) == "table" and info.oauthAccount.emailAddress or nil
+  local stat = noctalia.fileInfo(file)
+  local stamp = stat and `{stat.size}:{math.floor(stat.mtime * 1000)}` or nil
+  if not stamp or stamp ~= a.infoStamp then
+    local info = noctalia.json.decode(noctalia.readFile(file) or "")
+    a.email = type(info) == "table" and type(info.oauthAccount) == "table" and info.oauthAccount.emailAddress or nil
+    a.infoStamp = stamp
+  end
   a.hashPending = noctalia.runAsync({ PLUGIN .. "/limits.sh", a.dir, "hash" }, function(r)
     a.hash = r.exitCode == 0 and noctalia.string.trim(r.stdout or "") or nil
     a.hashPending = false
@@ -276,7 +282,10 @@ local function terminalOf(pid)
   if string.find(env, "KITTY_WINDOW_ID=", 1, true) then
     t = "kitty"
   else
-    t = string.match(env, "TERM_PROGRAM=([^%z]+)") or "terminal"
+    -- Plain find + anchored match: an unanchored pattern over the ~15 KB env costs ~10 ms per
+    -- process in the shell's runtime, so a few new sessions blew the 25 ms callback budget.
+    local _, e = string.find(env, "TERM_PROGRAM=", 1, true)
+    t = e and string.match(env, "^[^%z]+", e + 1) or "terminal"
   end
   terminals[pid] = t
   return t
