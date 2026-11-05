@@ -1,7 +1,7 @@
 #!/bin/sh
 # focus.sh PID: bring the terminal running Claude session PID to the front.
-# - kitty (KITTY_PID / KITTY_WINDOW_ID in the session's environment, and kitty remote control
-#   enabled): jump to the exact tab/split, then focus that kitty OS window.
+# - kitty outside tmux (KITTY_PID / KITTY_WINDOW_ID in the session's environment, and kitty remote
+#   control enabled): jump to the exact tab/split, then focus that kitty OS window.
 # - tmux (TMUX / TMUX_PANE in the session's environment): select the session's pane in a tmux
 #   client, then focus that client's terminal window (its exact kitty tab if it runs in kitty).
 # - any other terminal: walk up the process tree to the first process that owns a window.

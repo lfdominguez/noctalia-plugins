@@ -60,7 +60,8 @@ terminal window, and new sessions open in Noctalia's configured terminal.
 
 Sessions running inside tmux, in any terminal, need no setup: clicking one selects its window and pane, switches a
 tmux client to its tmux session, and focuses that client's terminal window. The plugin prefers a client that
-already shows the session, and otherwise switches the most recently active client.
+already shows the session, and otherwise switches the most recently active client. If that client runs in kitty
+with remote control enabled, the plugin also switches to its exact kitty tab or split.
 
 ## Usage
 
@@ -255,7 +256,7 @@ list of Remote Control sessions on other machines.
 | Recent sessions | Transcripts in `<config dir>/projects/`, plus whether `<config dir>/session-env/<session id>` exists and when it was created, to tell which account a session belongs to when config dirs share a `projects` dir. Read by `recent.sh` once a minute. |
 | Last prompt | `<config dir>/history.jsonl` |
 | Cost | Estimated from token usage and `pricing-cache.json`. |
-| Terminal | The session process's environment (`/proc/<pid>/environ`), checked once for `KITTY_PID`, `KITTY_WINDOW_ID` and `TERM_PROGRAM`, and for `TMUX` and `TMUX_PANE` when you click a session. Nothing else from it is kept. |
+| Terminal | The session process's environment (`/proc/<pid>/environ`), checked once for `KITTY_PID`, `KITTY_WINDOW_ID` and `TERM_PROGRAM`, and for `TMUX` and `TMUX_PANE` when you click a session. For a session inside tmux, the tmux client's environment is also checked for `KITTY_PID` and `KITTY_WINDOW_ID` when you click it. Nothing else from either is kept. |
 | Remote Control | `bridgeSessionId` in `<config dir>/sessions/*.json` for sessions on this machine. Other machines: see below. |
 | Plan limits | See below. |
 
